@@ -1,4 +1,4 @@
-# Feed-Forward Nuerel Networks
+# Feed-Forward Nueral Networks
 - Topology; hyperparameters
 - Activation functions
 - Training algorithm; Backpropagation
@@ -8,7 +8,7 @@
 
 
 
-## Feed-Forward Nuerel Networks
+## Feed-Forward Nueral Networks
 ### Topology
 
 > when i say im using "chatgpt", what exactly does that mean? its the trained model right? do the frameworks have a name? is that what tenserflow is?
