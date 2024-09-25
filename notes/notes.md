@@ -1,4 +1,4 @@
-## Feed-Forward Nueral Networks - 9/20/24
+## Feed-Forward Nueral Networks
 
 ### Topology
 
@@ -43,5 +43,37 @@
 
 > could you perform gradient descent on a binary activation function by counting the changes in 0 and 1?
 
-## Recurrent Neural Network 9/25/24
 
+
+## Recurrent Neural Network
+
+### Topology
+
+> Minsky and Papert pointed out that recurrent networks can be unrolled in time into a layered feedforward network.[23]: 354 (https://en.wikipedia.org/wiki/Recurrent_neural_network)
+
+- contains loops allowing memory
+- good at sequential tasks where previous inputs affect the output
+
+
+```python
+rnn = RNN()
+ff = FFN()
+hidden_state = [0.0, 0.0, 0.0, ..., 0.0]
+
+for item in input:
+    output, hidden_state = rnn(item, hidden_state)
+
+prediction = ff(output)
+```
+- short term memory (vanishing gradient)
+    - long short-term memory (LSTM)
+        - uses gates to remember relevant information and forget others
+    - gated recurrent unit (GRU)
+        - update gate
+        - reset gate
+        - less tensor operations than LSTM
+
+### Training
+
+- backpropogation
+- short term memory
