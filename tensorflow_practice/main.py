@@ -1,37 +1,46 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 import tensorflow as tf
-print("TensorFlow version:", tf.__version__)
 
-mnist = tf.keras.datasets.mnist
 
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0
+data = pd.read_csv("student_data.csv", delimiter=';')
 
-model = tf.keras.models.Sequential([
-  tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(128, activation='relu'),
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(10)
+# map output to number
+#   Dropout  -> 0
+#   Enrolled -> 1
+#   Graduate -> 1
+data['Output'] = data['Output'].apply(lambda x: 0 if x == 'Dropout' else 1)
+
+# X is our input vector (excludes the 'Output' column)
+X = data.drop(columns=['Output'])
+
+# y is our output vector
+y = data['Output']
+
+# normalize the input vector
+X_scaled = StandardScaler().fit_transform(X)
+
+# split the data
+#   training:   70%
+#   test:       15%
+#   validation: 15%
+X_train, X_temp, y_train, y_temp = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+
+# sequential NN of dense (fully connected) layers
+model = tf.keras.Sequential([
+  tf.keras.layers.Dense(128, input_dim=X_train.shape[1], activation='relu'),
+  tf.keras.layers.Dense(1, activation='sigmoid'),
 ])
 
-predictions = model(x_train[:1]).numpy()
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-tf.nn.softmax(predictions).numpy()
+model.fit(X_train, y_train, epochs=50, validation_data=(X_val, y_val), batch_size=32)
 
-loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+test_loss, test_accuracy = model.evaluate(X_test, y_test)
 
-loss_fn(y_train[:1], predictions).numpy()
+print(f'Accuracy: {test_accuracy:.4f}')
 
-model.compile(optimizer='adam',
-              loss=loss_fn,
-              metrics=['accuracy'])
-
-model.fit(x_train, y_train, epochs=5)
-
-model.evaluate(x_test,  y_test, verbose=2)
-
-probability_model = tf.keras.Sequential([
-  model,
-  tf.keras.layers.Softmax()
-])
-
-probability_model(x_test[:5])
+print(model.summary())

@@ -1,14 +1,5 @@
-# Feed-Forward Nueral Networks
-- Topology; hyperparameters
-- Activation functions
-- Training algorithm; Backpropagation
-- Data split for training, test, cross-validation
-- Performance metrics
+## Feed-Forward Nueral Networks - 9/20/24
 
-
-
-
-## Feed-Forward Nueral Networks
 ### Topology
 
 > when i say im using "chatgpt", what exactly does that mean? its the trained model right? do the frameworks have a name? is that what tenserflow is?
@@ -42,7 +33,7 @@
 
 - function performed by a node upon receiving signal(s)
 
-### Training, Backpropgation
+### Training, Backpropogation
 
 > when training finds a local minima, is it like the input produced the correct output, but did it differently than the other correct answers, so it kinda rewarded the right answer without looking at how it got to a solution like if you reward someone for passing a test but they cheated so they keep cheating?
 
@@ -51,4 +42,6 @@
 > are there multiple cost functions?
 
 > could you perform gradient descent on a binary activation function by counting the changes in 0 and 1?
+
+## Recurrent Neural Network 9/25/24
 
