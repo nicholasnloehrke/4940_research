@@ -1,12 +1,12 @@
-## Feed-Forward Nueral Networks
+## Feed-Forward Neural Networks
 
 ### Topology
 
-> when i say im using "chatgpt", what exactly does that mean? its the trained model right? do the frameworks have a name? is that what tenserflow is?
+> when i say im using "chatgpt", what exactly does that mean? its the trained model right? do the frameworks have a name? is that what tensorflow is?
 
-> are NN's state machines? if so, is the NN interpolating between unknown inputs? does that mean a NN doesnt work when inputs are outside the training range?
+> are NN's state machines? if so, is the NN interpolating between unknown inputs? does that mean a NN doesn't work when inputs are outside the training range?
 
-> is 'running' a NN just computer all the activation functions? is this why GPUs are so good for NN because all these linear operations can be easily parrallelised?
+> is 'running' a NN just computer all the activation functions? is this why GPUs are so good for NN because all these linear operations can be easily parallelized?
 
 > are 'real' NN this simple?
 
@@ -17,7 +17,7 @@
     - hidden layer(s)
     - output layer
 
-    ![alt text](./images/ffnn.png)
+    ![ffnn](./images/ffnn.png)
 
 - data flows one way (as opposed to recurrent networks which allow bidirectional flow)
 - nodes perform non-linear functions on their inputs and output a real number (**Activation Function**)
@@ -49,7 +49,7 @@
 
 ### Topology
 
-> Minsky and Papert pointed out that recurrent networks can be unrolled in time into a layered feedforward network.[23]: 354 (https://en.wikipedia.org/wiki/Recurrent_neural_network)
+> Minsky and Paper pointed out that recurrent networks can be unrolled in time into a layered feedforward network.[23]: 354 (https://en.wikipedia.org/wiki/Recurrent_neural_network)
 
 - contains loops allowing memory
 - good at sequential tasks where previous inputs affect the output
@@ -87,11 +87,11 @@ w = \overbrace{\left[ 0, 0, \dots, 1, \dots, 0, 0 \right]}^\text{|V| elements}
 $$
 
 - each word $w$ is represented by a one-hot vector
-- the draw back besides the huge size is each word is treated independantly with **no relation to each other**
+- the draw back besides the huge size is each word is treated independently with **no relation to each other**
 
 ### Dense word embeddings
 
-What if we created dense vectors that captured some semantic attributes of the words, for example:
+If we created dense vectors that captured some semantic attributes of the words, for example:
 
 $$
 q_\text{nick} = \left[ \overbrace{3.3}^\text{likes table tennis}, \overbrace{-9.4}^\text{is a professor}, \overbrace{-7.5}^\text{married}, \dots \right]
@@ -101,23 +101,23 @@ $$
 q_\text{hynek} = \left[ \overbrace{6.5}^\text{likes table tennis}, \overbrace{9.1}^\text{is a professor}, \overbrace{6.4}^\text{married}, \dots \right]
 $$
 
-We could measure similarity between words by:
+we could measure similarity between words by:
 
 $$
-\text{Similarity(physicist, mathematician)} = q_{\text{physicist}} \cdot q_{\text{mathmetician}}
+\text{Similarity(physicist, mathematician)} = q_{\text{physicist}} \cdot q_{\text{mathematician}}
 $$
 
 or even better,
 
 $$
-\text{Similarity(physicist, mathematician)} = \frac{q_{\text{physicist}} \cdot q_{\text{mathmetician}}}{\|q_{\text{physicist}}\| \|q_{\text{mathmetician}}\|} = \cos{\phi}
+\text{Similarity(physicist, mathematician)} = \frac{q_{\text{physicist}} \cdot q_{\text{mathematician}}}{\|q_{\text{physicist}}\| \|q_{\text{mathematician}}\|} = \cos{\phi}
 $$
 
-Where $\phi$ is the angle between the word vectors. Similar words will have a similarity of 1 and dissimlar words will have a similarity of -1.
+Where $\phi$ is the angle between the word vectors. Similar words will have a similarity of 1 and dissimilar words will have a similarity of -1.
 
 Neural networks can learn these *latent semantic attributes* through the assumption that like words will appear close together.
 
-> Further reading: transformers (BERT, GPT), contextual word embeddings (ELMo), attention mechanisms (T5, BART)
+> Further reading: transformers (BERT, GPT), contextual word embeddings (ELMo), attention mechanisms (T5, BART), GloVe, FastText, doc2vec
 
 ### Word2vec
 
@@ -128,3 +128,28 @@ Creates vector representations of words based on surrounding text from a large c
 
 CBOW is like a 'fill in the blank' test where a fixed sized window surrounding a target word is used to predict the target word.
 
+![CBOW](./images/CBOW.png)
+
+Skip-gram is the reverse; the context words are predicted from the target word
+
+![skip-gram](./images/skip_gram.png)
+
+#### Summary
+
+- **How it works?**
+    - Produces dense vector representations (embeddings) of words using CBOW or skip-gram architecture. CBOW predicts a target word from context while skip-gram predicts context words from a target word
+- **How was it trained?**
+    - Large corpus of text, defined window size, maximizing probability of context/target prediction
+- **What is the input?**
+    - **1 word at a time?**
+        - For skip-gram, 1 word is fed in and the context words are predicted. For CBOW, the context is fed in and a single word is predicted
+    - **Representations of the word(s) at the input?**
+        - One-hot vector or integer encoding (map)
+    - **BoW?**
+        - I don't remember what this question meant
+- **Output?**
+    - Both skip-gram and CBOW will produce an embedding matrix that can be used directly to compute similarities or as input for downstream neural networks
+    - Skip-gram will produce context given a target word
+    - CBOW will produce a target word given a context
+
+Word2vec has a potential downside in that it cannot be used for out-of-vocabulary (OOV) words, meaning if the training corpus did not include a specific word, there will not be a generated embedding. FastText uses a similar idea to skip-gram called $n$-gram's. The idea is each word is treated as a composition of $n$-grams. For example, using an $n$ value of 3, the word 'pizza' would have an $n$-gram representation of '<pi, piz, izz, zza, za>' where '<' and '>' signify the start and end of the token. Embeddings for OOV words are generated by averaging the $n$-gram's making up the OOV word. The drawback to FastText is the high memory requirement since embeddings are created from characters not words.
