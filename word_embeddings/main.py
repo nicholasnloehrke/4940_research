@@ -36,7 +36,7 @@ web browsing habits to be bundled and sold to data brokers and/or
 depending on your country, sent directly to your government for...safety... 
 At least you can see the screen and the battery will go 2 days."""
 
-
+# https://drive.usercontent.google.com/download?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download&authuser=0&confirm=t&uuid=aee2a0a1-3165-4e30-b1ae-59f57336333d&at=AN_67v3YwY4qjpScmMOLnekLhSxZ%3A1727846539312
 path = "/mnt/c/Users/nicholas/Documents/GoogleNews-vectors-negative300.bin.gz"
 model = KeyedVectors.load_word2vec_format(path, binary=True, limit=100000)
 
