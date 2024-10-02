@@ -37,8 +37,16 @@ depending on your country, sent directly to your government for...safety...
 At least you can see the screen and the battery will go 2 days."""
 
 # https://drive.usercontent.google.com/download?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download&authuser=0&confirm=t&uuid=aee2a0a1-3165-4e30-b1ae-59f57336333d&at=AN_67v3YwY4qjpScmMOLnekLhSxZ%3A1727846539312
-path = "/mnt/c/Users/nicholas/Documents/GoogleNews-vectors-negative300.bin.gz"
-model = KeyedVectors.load_word2vec_format(path, binary=True, limit=100000)
+# path = "/mnt/c/Users/nicholas/Documents/GoogleNews-vectors-negative300.bin.gz"
+path = r"C:\Users\nicholas\Documents\GoogleNews-vectors-negative300.bin.gz"
+model = KeyedVectors.load_word2vec_format(path, binary=True, limit=20000)
+
+
+# result = model.most_similar_cosmul(positive=['woman', 'king'], negative=['man'])
+# most_similar_key, similarity = result[0]  # look at the first match
+# print(f"{most_similar_key}: {similarity:.4f}")
+
+# print(model['professor'])
 
 good_average = np.zeros(300)
 good_count = 0
@@ -60,3 +68,6 @@ bad_average /= bad_count
 
 print(f'good: {np.dot(good_average, model["good"])})')
 print(f'bad: {np.dot(bad_average, model["good"])})')
+
+
+# print()
