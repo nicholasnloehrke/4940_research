@@ -1,55 +1,12 @@
 import pandas as pd
-import spacy
 import numpy as np
-import fasttext 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 
-
-# load models
-nlp = spacy.load('en_core_web_sm')
-ft_model = fasttext.load_model('crawl-300d-2M-subword.bin')
-
-# load data
-data = pd.read_csv('clean_data.csv', encoding='utf-8')
-
-# remove neutral ratings
-data = data[data['rating'] != 3]
-
-def clean_text(text):
-    return text.encode('utf-8', errors='ignore').decode('utf-8')
-
-data['review'] = data['review'].apply(clean_text)
-
-# remove stop words and punctuation
-data['review'] = data['review'].apply(
-    lambda text: (
-        [token.text for token in nlp(text) if not token.is_stop and not token.is_punct]
-        if isinstance(text, str)
-        else []
-    )
-)
-
-# create binary sentiment labels (0 = negative, 1 = positive)
-data['sentiment'] = np.where(data['rating'] > 2, 1, 0)
-
-data.to_csv('data')
-
-# convert tokens to FastText embeddings
-def get_embeddings(tokens):
-    try:
-        return [ft_model.get_word_vector(token) for token in tokens if token in ft_model]
-    except Exception as e:
-        print(f'embedding exception: {tokens} {e}')
-
-data['embeddings'] = data['review'].apply(get_embeddings)
-
-# pad sequences
-max_length = max(data['embeddings'].apply(len))
-data['embeddings'] = data['embeddings'].apply(lambda x: x + [[0] * 300] * (max_length - len(x)))
-
+# load review data with embeddings
+data = pd.read_csv('review_data_with_embeddings.csv')
 
 class ReviewDataset(Dataset):
     def __init__(self, embeddings, labels):
@@ -60,7 +17,10 @@ class ReviewDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return torch.tensor(self.embeddings[idx], dtype=torch.float32), torch.tensor(self.labels[idx], dtype=torch.long)
+        # convert the list of embeddings to a 2D tensor
+        embedding_tensor = torch.tensor(self.embeddings[idx], dtype=torch.float32)
+        label_tensor = torch.tensor(self.labels[idx], dtype=torch.long)
+        return embedding_tensor, label_tensor
 
 # convert labels to tensor
 labels = data['rating'].values
@@ -84,7 +44,7 @@ class SentimentLSTM(nn.Module):
 
     def forward(self, x):
         out, (h_n, c_n) = self.lstm(x)
-        out = self.fc(h_n[-1])  # Use the last hidden state
+        out = self.fc(h_n[-1])  # use the last hidden state
         return out
 
 # set parameters
