@@ -4,6 +4,7 @@
 crawl-300d-2M-subword.bin
 crawl-300d-2M-subword.vec
 .vscode/
+rnn\data\review_data_embeddings.pkl
 
 
 #############################################
