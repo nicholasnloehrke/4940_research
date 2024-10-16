@@ -1,10 +1,10 @@
-import ast
 import pandas as pd
 import numpy as np
 import emoji
 import re
 import spacy
 import fasttext
+import pickle
 
 
 # load models
@@ -12,7 +12,8 @@ nlp = spacy.load('en_core_web_sm')
 ft_model = fasttext.load_model('crawl-300d-2M-subword.bin')
 
 # load review data
-data = pd.read_csv('review_data.csv', nrows=50)
+data = pd.read_csv('data/review_data.csv', nrows=1000)
+# data = pd.read_csv('data/review_data.csv')
 
 # remove empty reviews
 data = data[data['review'].apply(lambda x: isinstance(x, str))]
@@ -38,19 +39,27 @@ data['review'] = data['review'].apply(
     )
 )    
 
-# convert tokens to FastText embeddings
+# convert tokens to a 2D NumPy array of embeddings
 def get_embeddings(tokens):
-    embeddings = []
-    for token in tokens:
-        embeddings.append(ft_model.get_word_vector(token))
-    return embeddings
+    embeddings = [ft_model.get_word_vector(token) for token in tokens]
+    return np.array(embeddings, dtype=np.float32)
 
 data['embeddings'] = data['review'].apply(get_embeddings)
 
-# pad embeddings
+# pad embeddings to max length
+def pad_embeddings(embedding, max_length):
+    if len(embedding) < max_length:
+        padding = np.zeros((max_length - len(embedding), 300), dtype=np.float32)
+        return np.vstack([embedding, padding])
+    return embedding
+
 max_length = max(data['embeddings'].apply(len))
-data['embeddings'] = data['embeddings'].apply(lambda x: x + [[0] * 300] * (max_length - len(x)))
+data['embeddings'] = data['embeddings'].apply(lambda x: pad_embeddings(x, max_length))
 
-data.to_csv('review_data_with_embeddings.csv')
+selected_columns = data[['sentiment', 'embeddings']]
 
+selected_columns.to_pickle('data/review_data_embeddings.pkl')
+    
 print(f'Embedding length: {max_length}')
+print(f"Number of sentiments: {len(data['sentiment'])}")
+print(f"Number of embeddings: {len(data['embeddings'])}")
