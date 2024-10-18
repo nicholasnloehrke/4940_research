@@ -1,65 +1,78 @@
-import pandas as pd
+import fasttext
 import numpy as np
-import emoji
+import pandas as pd
 import re
 import spacy
-import fasttext
-import pickle
+import argparse
 
 
-# load models
-nlp = spacy.load('en_core_web_sm')
-ft_model = fasttext.load_model('crawl-300d-2M-subword.bin')
+nlp = None
+ft = None
 
-# load review data
-data = pd.read_csv('data/review_data.csv', nrows=1000)
-# data = pd.read_csv('data/review_data.csv')
+def load_models():
+    """Used to lazy-load models after parsing arguments"""
+    global nlp, ft
+    nlp = spacy.load("en_core_web_sm")
+    ft = fasttext.load_model("models/crawl-300d-2M-subword.bin")
 
-# remove empty reviews
-data = data[data['review'].apply(lambda x: isinstance(x, str))]
 
-# remove numbers from reviews
-data['review'] = data['review'].apply(lambda review: re.sub(r'\d+', '', review))
+def clean_text(text):
+    """Remove urls, html tags, special characters, and numbers"""
+    text = re.sub(r"http\S+|www\S+|<.*?>", "", text)  # remove urls and html tags
+    text = re.sub(r"[^a-zA-Z\s]", "", text)  # remove special characters and numbers
+    text = text.strip().lower()
+    return text
 
-# remove emojis
-data['review'] = data['review'].apply(lambda review: emoji.replace_emoji(review, replace=''))
 
-# remove neutral ratings
-data = data[data['rating'] != 3]
+def tokenize(text):
+    """Tokenize with lemmatization and removing stop words"""
+    cleaned_text = clean_text(text)
+    doc = nlp(cleaned_text)
+    tokens = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
+    return " ".join(tokens)
 
-# create binary sentiment (0 = negative, 1 = positive)
-data['sentiment'] = np.where(data['rating'] > 2, 1, 0)
 
-# remove stop words and punctuation
-data['review'] = data['review'].apply(
-    lambda text: (
-        [token.text for token in nlp(text) if not token.is_stop and not token.is_punct]
-        if isinstance(text, str)
-        else []
-    )
-)    
-
-# convert tokens to a 2D NumPy array of embeddings
 def get_embeddings(tokens):
-    embeddings = [ft_model.get_word_vector(token) for token in tokens]
+    """Convert tokens to a numpy array of embeddings"""
+    embeddings = [ft.get_word_vector(token) for token in tokens]
     return np.array(embeddings, dtype=np.float32)
 
-data['embeddings'] = data['review'].apply(get_embeddings)
 
-# pad embeddings to max length
-def pad_embeddings(embedding, max_length):
-    if len(embedding) < max_length:
-        padding = np.zeros((max_length - len(embedding), 300), dtype=np.float32)
-        return np.vstack([embedding, padding])
-    return embedding
+def pad_embedding(embeddings, pad_length):
+    """Pad embeddings to the specified maximum length."""
+    if len(embeddings) == 0:
+        return np.zeros((pad_length, 300), dtype=np.float32)
+    elif len(embeddings) < pad_length:
+        padding = np.zeros((pad_length - len(embeddings), 300), dtype=np.float32)
+        return np.vstack([embeddings, padding])
+    return embeddings[:pad_length]
 
-max_length = max(data['embeddings'].apply(len))
-data['embeddings'] = data['embeddings'].apply(lambda x: pad_embeddings(x, max_length))
 
-selected_columns = data[['sentiment', 'embeddings']]
+def main(args):
+    df = pd.read_csv(args.input_file, nrows=args.rows) if args.rows > 0 else pd.read_csv("data/review_data.csv")
+    df = df.dropna()
 
-selected_columns.to_pickle('data/review_data_embeddings.pkl')
+    df["sentiment"] = np.where(df["rating"] < 3, 0, 1)
+    df["cleaned_review"] = df["review"].apply(tokenize)
+    df["embedding"] = df["cleaned_review"].apply(get_embeddings)
     
-print(f'Embedding length: {max_length}')
-print(f"Number of sentiments: {len(data['sentiment'])}")
-print(f"Number of embeddings: {len(data['embeddings'])}")
+    if args.pad_length > 0:
+        df["embedding"] = df["embedding"].apply(lambda x: pad_embedding(x, args.pad_length))
+    
+    output_df = df[["sentiment", "embedding"]]
+    
+    output_df.to_pickle(args.output)
+    
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process review data.")
+    parser.add_argument("-r", "--rows", type=int, default=0, help="Number of rows to read from the CSV file.")
+    parser.add_argument("-p", "--pad_length", type=int, default=0, help="Maximum length for padding embeddings.")
+    parser.add_argument("-o", "--output", type=str, default="embedding.pkl", help="Output file")
+    parser.add_argument("input_file", type=str, help="Input CSV file")
+    
+    args = parser.parse_args()
+    
+    load_models()
+
+    main(args)

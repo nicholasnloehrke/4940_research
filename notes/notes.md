@@ -138,3 +138,6 @@ Word2vec is considered outdated in favor of transformers.
 
 - how are inputs organized? padded? LSTM?
 
+(['refrigerator', '<ref', 'refr', 'efri', 'frig', 'rige', 'iger', 'gera', 'erat', 'rato', 'ator', 'tor>'], array([   6315, 3998276, 
+3822544, 3278539, 2069117, 3246884, 3006258,
+       3159920, 2716211, 3195125, 3616757, 3672916]))
