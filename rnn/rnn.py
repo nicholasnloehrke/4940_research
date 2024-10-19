@@ -10,11 +10,7 @@ import os
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tuner.log')
 
-logging.basicConfig(
-    filename=log_file_path,  # Log file name
-    level=logging.INFO,  # Set the logging level
-    format='%(message)s'  # Format of the log messages
-)
+logging.basicConfig(filename=log_file_path, level=logging.INFO, format='%(message)s')
 
 @dataclass
 class Config:

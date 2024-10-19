@@ -55,6 +55,10 @@ prediction = ff(output)
 
 - backpropogation
 - short term memory
+- consider keeping stop words, emoji's, etc.
+- 2 classes for positive and negative
+- unweighted accuracy
+- threshold
 
 
 ## Word Embeddings
@@ -138,6 +142,13 @@ Word2vec is considered outdated in favor of transformers.
 
 - how are inputs organized? padded? LSTM?
 
+"We distribute pre-trained word vectors for 157 languages, trained on Common Crawl and Wikipedia using fastText. These models were trained using CBOW with position-weights, in dimension 300, with character n-grams of length 5, a window of size 5 and 10 negatives. We also distribute three new word analogy datasets, for French, Hindi and Polish."
+
+
+subword of 'refrigerator':
+
 (['refrigerator', '<ref', 'refr', 'efri', 'frig', 'rige', 'iger', 'gera', 'erat', 'rato', 'ator', 'tor>'], array([   6315, 3998276, 
 3822544, 3278539, 2069117, 3246884, 3006258,
        3159920, 2716211, 3195125, 3616757, 3672916]))
+
+
