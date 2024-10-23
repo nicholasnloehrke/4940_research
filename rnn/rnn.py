@@ -2,15 +2,10 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import argparse
-import logging
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import KFold
 from dataclasses import dataclass
-import os
 
-log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tuner.log')
-
-logging.basicConfig(filename=log_file_path, level=logging.INFO, format='%(message)s')
 
 @dataclass
 class Config:
@@ -29,7 +24,7 @@ class SentimentRNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers=1, bidirectional=False):
         super().__init__()
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
-        self.fc = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, 1)
+        self.fc = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, 2)
 
     def forward(self, x):
         out, _ = self.rnn(x)
@@ -59,20 +54,21 @@ def create_dataloader(df: pd.DataFrame, indices, config: Config):
     return DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
 
 def train(model: nn.Module, dataloader: DataLoader, config: Config):
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    logging.info("epoch,loss")
+    print("epoch,loss")
     for epoch in range(config.epochs):
         for embeddings, labels in dataloader:
             embeddings, labels = embeddings.to(device), labels.to(device)
             outputs = model(embeddings.float())
-            loss = criterion(outputs.squeeze(), labels.float())
+            # loss = criterion(outputs.squeeze(), labels.float())
+            loss = criterion(outputs, labels)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-        logging.info(f"{epoch},{loss.item():.4f}")
+        print(f"{epoch},{loss.item():.4f}")
 
 def evaluate(model: nn.Module, dataloader: DataLoader):
     model.eval()
@@ -83,7 +79,8 @@ def evaluate(model: nn.Module, dataloader: DataLoader):
             embeddings, labels = embeddings.to(device), labels.to(device)
 
             outputs = model(embeddings.float())
-            predicted = torch.round(torch.sigmoid(outputs.squeeze()))
+            # predicted = torch.round(torch.sigmoid(outputs.squeeze()))
+            predicted = torch.argmax(outputs, dim=1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     accuracy = correct / total
@@ -91,6 +88,8 @@ def evaluate(model: nn.Module, dataloader: DataLoader):
     return accuracy
 
 def main(args):
+    print("__program_start__")
+
     config = Config(
         hidden_size=args.hidden_size if args.hidden_size is not None else Config.hidden_size,
         layers=args.layers if args.layers is not None else Config.layers,
@@ -101,7 +100,7 @@ def main(args):
         folds=args.folds if args.folds is not None else Config.folds
     )
     
-    logging.info(config)
+    print(config)
 
     df = pd.read_pickle(args.embeddings_file)
     kf = KFold(n_splits=config.folds, shuffle=True)
@@ -112,19 +111,18 @@ def main(args):
         train_loader = create_dataloader(df, train_indices, config)
         val_loader = create_dataloader(df, val_indices, config)
         
-        logging.info("__train_start__")
+        print("__train_start__")
         train(model, train_loader, config)
-        logging.info("__train_stop__")
+        print("__train_stop__")
         
-        logging.info("__evaluate_start__")
+        print("__evaluate_start__")
         accuracy = evaluate(model, val_loader)
         accuracies.append(accuracy)
         
-        logging.info(f"{accuracy:.2f}")
-        logging.info("__evaluate_stop__")
+        print(f"{accuracy:.2f}")
+        print("__evaluate_stop__")
 
 if __name__ == "__main__":
-    logging.info("__program_start__")
     parser = argparse.ArgumentParser(description="Sentiment RNN")
     parser.add_argument("embeddings_file", type=str, help="Input pickle file containing embeddings and sentiments")
     parser.add_argument("--hidden_size", type=int, help="Size of hidden state")
@@ -134,8 +132,8 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, help="Number of training epochs")
     parser.add_argument("--learning_rate", type=float, help="Learning rate")
     parser.add_argument("--folds", type=int, help="Number of folds used for training")
-        
+            
     args = parser.parse_args()
     
     main(args)
-    logging.info("__program_stop__")
+    print("__program_stop__")

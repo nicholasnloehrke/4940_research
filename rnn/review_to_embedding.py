@@ -12,7 +12,7 @@ ft = None
 def load_models():
     """Used to lazy-load models after parsing arguments"""
     global nlp, ft
-    nlp = spacy.load("en_core_web_sm")
+    # nlp = spacy.load("en_core_web_sm")
     ft = fasttext.load_model("models/crawl-300d-2M-subword.bin")
 
 
@@ -49,19 +49,34 @@ def pad_embedding(embeddings, pad_length):
 
 
 def main(args):
-    df = pd.read_csv(args.input_file, nrows=args.rows) if args.rows > 0 else pd.read_csv("data/review_data.csv")
+    df = pd.read_csv(args.input_file, nrows=args.rows) if args.rows > 0 else pd.read_csv(args.input_file)
     df = df.dropna()
-
     df["sentiment"] = np.where(df["rating"] < 3, 0, 1)
-    df["cleaned_review"] = df["review"].apply(tokenize)
-    df["embedding"] = df["cleaned_review"].apply(get_embeddings)
-    
+    # df["review_tokens"] = df["review"].apply(lambda text: text.split(" ").lower())
+    df["embedding"] = df["review"].apply(get_embeddings)    
+
     if args.pad_length > 0:
         df["embedding"] = df["embedding"].apply(lambda x: pad_embedding(x, args.pad_length))
     
     output_df = df[["sentiment", "embedding"]]
     
     output_df.to_pickle(args.output)
+    
+    
+    
+    # df = pd.read_csv(args.input_file, nrows=args.rows) if args.rows > 0 else pd.read_csv(args.input_file)
+    # df = df.dropna()
+
+    # df["sentiment"] = np.where(df["rating"] < 3, 0, 1)
+    # df["cleaned_review"] = df["review"].apply(tokenize)
+    # df["embedding"] = df["cleaned_review"].apply(get_embeddings)
+    
+    # if args.pad_length > 0:
+    #     df["embedding"] = df["embedding"].apply(lambda x: pad_embedding(x, args.pad_length))
+    
+    # output_df = df[["sentiment", "embedding"]]
+    
+    # output_df.to_pickle(args.output)
     
 
 if __name__ == "__main__":
