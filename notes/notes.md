@@ -59,6 +59,8 @@ prediction = ff(output)
 - 2 classes for positive and negative
 - unweighted accuracy
 - threshold
+- reverse chunks of reviews
+- text augmentation
 
 
 ## Word Embeddings
