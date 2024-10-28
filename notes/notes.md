@@ -61,7 +61,8 @@ prediction = ff(output)
 - threshold
 - reverse chunks of reviews
 - text augmentation
-
+- fully connected layer after LSTM
+- unweighted accuracy
 
 ## Word Embeddings
 
