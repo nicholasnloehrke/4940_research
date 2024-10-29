@@ -59,7 +59,10 @@ prediction = ff(output)
 - 2 classes for positive and negative
 - unweighted accuracy
 - threshold
-
+- reverse chunks of reviews
+- text augmentation
+- fully connected layer after LSTM
+- unweighted accuracy
 
 ## Word Embeddings
 
