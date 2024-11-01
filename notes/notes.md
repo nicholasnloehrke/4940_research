@@ -55,6 +55,9 @@ prediction = ff(output)
 
 - backpropogation
 - short term memory
+
+### Notes
+
 - consider keeping stop words, emoji's, etc.
 - 2 classes for positive and negative
 - unweighted accuracy

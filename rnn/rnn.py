@@ -5,6 +5,9 @@ import argparse
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import KFold
 from dataclasses import dataclass
+from sklearn.metrics import confusion_matrix, accuracy_score, balanced_accuracy_score
+import numpy as np
+import pprint
 
 
 @dataclass
@@ -18,7 +21,6 @@ class Config:
     learning_rate: float = 0.0005
     folds: int = 3
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -26,12 +28,15 @@ class SentimentRNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers=1, bidirectional=False):
         super().__init__()
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
-        self.fc = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, 2)
+        fc_dim = hidden_size * 2 if bidirectional else hidden_size
+        self.fc1 = nn.Linear(fc_dim, fc_dim)
+        self.fc2 = nn.Linear(fc_dim, 2)
 
     def forward(self, x):
         out, _ = self.rnn(x)
         out = out[:, -1, :]
-        out = self.fc(out)
+        out = torch.relu(self.fc1(out))
+        out = self.fc2(out)
         return out
 
 
@@ -54,7 +59,7 @@ def create_dataloader(df: pd.DataFrame, indices, config: Config) -> DataLoader:
     labels = torch.tensor(fold_df["sentiment"].values)
 
     dataset = SentimentDataset(features, labels)
-    return DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
+    return DataLoader(dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True)
 
 
 def train(model: nn.Module, dataloader: DataLoader, config: Config):
@@ -74,21 +79,41 @@ def train(model: nn.Module, dataloader: DataLoader, config: Config):
         print(f"{epoch}, {loss.item():.4f}")
 
 
-def evaluate(model: nn.Module, dataloader: DataLoader):
+def evaluate(model: nn.Module, dataloader: DataLoader, config: Config):
     model.eval()
+    all_labels = []
+    all_outputs = []
+
     with torch.no_grad():
-        correct = 0
-        total = 0
         for embeddings, labels in dataloader:
             embeddings, labels = embeddings.to(device), labels.to(device)
 
             outputs = model(embeddings.float())
-            predicted = torch.argmax(outputs, dim=1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    accuracy = correct / total
+            all_labels.extend(labels.cpu().numpy())
+            all_outputs.extend(torch.argmax(outputs, dim=1).cpu().numpy())
 
-    return accuracy
+    metric = {}
+    all_labels = np.array(all_labels)
+    all_outputs = np.array(all_outputs)
+
+    matrix = confusion_matrix(all_labels, all_outputs)
+    
+    TN = matrix[0][0]
+    FP = matrix[0][1]
+    FN = matrix[1][0]
+    TP = matrix[1][1]
+    
+    metric['unweighted_accuracy'] = (TP + TN) / (TP + TN + FP + FN)
+    metric['TN'] = TN
+    metric['FP'] = FP
+    metric['FN'] = FN
+    metric['TP'] = TP
+    
+    MCC = ((TP * TN) - (FP * FN)) / float(np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)))
+    
+    metric['mcc'] = MCC
+
+    return metric
 
 
 def main(args):
@@ -99,15 +124,15 @@ def main(args):
         bidirectional=args.bidirectional,
         epochs=args.epochs if args.epochs is not None else Config.epochs,
         learning_rate=args.learning_rate if args.learning_rate is not None else Config.learning_rate,
-        folds=args.folds if args.folds is not None else Config.folds,
+        folds=args.folds if args.folds is not None else Config.folds
     )
 
     print(config)
 
     df = pd.read_pickle(args.embeddings_file)
     kf = KFold(n_splits=config.folds, shuffle=True)
-    accuracies = []
-
+    
+    metrics = []
     for train_indices, val_indices in kf.split(df):
         model = SentimentRNN(config.input_size, config.hidden_size, config.layers, config.bidirectional).to(device)
         train_loader = create_dataloader(df, train_indices, config)
@@ -115,10 +140,15 @@ def main(args):
 
         train(model, train_loader, config)
 
-        accuracy = evaluate(model, val_loader)
-        accuracies.append(accuracy)
+        metric = evaluate(model, val_loader, config)
+        metrics.append(metric)
 
-        print(f"{accuracy:.2f}")
+        print(f'Unweighted accuracy: {metric["unweighted_accuracy"]:.3f}')
+        print(f'TN: {metric["TN"]}')
+        print(f'FP: {metric["FP"]}')
+        print(f'FN: {metric["FN"]}')
+        print(f'TP: {metric["TP"]}')
+        print(f'mcc: {metric["mcc"]:.3f}')
 
 
 if __name__ == "__main__":

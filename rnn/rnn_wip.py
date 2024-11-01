@@ -5,7 +5,7 @@ import argparse
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import KFold
 from dataclasses import dataclass
-from torch.utils.tensorboard import SummaryWriter
+ from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import confusion_matrix, roc_curve, precision_recall_curve, auc
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,6 +31,7 @@ class SentimentRNN(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, num_layers: int = 1, bidirectional: bool = False):
         super().__init__()
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=bidirectional)
+        self.fc1 = nn.Linear()
         self.fc = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, 2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
