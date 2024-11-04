@@ -5,6 +5,7 @@
 .vscode/
 rnn/data/review_data_embeddings.pkl
 rnn/models/
+rnn/pretrained_models/
 rnn/data/*.pkl
 rnn/runs/
 

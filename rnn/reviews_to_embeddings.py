@@ -5,7 +5,7 @@ import fasttext
 from pathlib import Path
 
 
-FASTTEXT_MODEL_PATH = str(Path("models/crawl-300d-2M-subword.bin").resolve())
+FASTTEXT_MODEL_PATH = str(Path("pretrained_models/crawl-300d-2M-subword.bin").resolve())
 
 ft = None
 

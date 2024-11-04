@@ -66,6 +66,7 @@ prediction = ff(output)
 - text augmentation
 - fully connected layer after LSTM
 - unweighted accuracy
+- keep softmax
 
 ## Word Embeddings
 

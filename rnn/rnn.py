@@ -4,22 +4,14 @@ import pandas as pd
 import argparse
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import KFold
-from dataclasses import dataclass
 from sklearn.metrics import confusion_matrix, accuracy_score, balanced_accuracy_score
 import numpy as np
-import pprint
+from pathlib import Path
+import os
+from config import Config
 
 
-@dataclass
-class Config:
-    input_size: int = 300
-    hidden_size: int = 32
-    layers: int = 1
-    batch_size: int = 1
-    bidirectional: bool = True
-    epochs: int = 10
-    learning_rate: float = 0.0005
-    folds: int = 3
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -89,6 +81,7 @@ def evaluate(model: nn.Module, dataloader: DataLoader, config: Config):
             embeddings, labels = embeddings.to(device), labels.to(device)
 
             outputs = model(embeddings.float())
+
             all_labels.extend(labels.cpu().numpy())
             all_outputs.extend(torch.argmax(outputs, dim=1).cpu().numpy())
 
@@ -97,21 +90,21 @@ def evaluate(model: nn.Module, dataloader: DataLoader, config: Config):
     all_outputs = np.array(all_outputs)
 
     matrix = confusion_matrix(all_labels, all_outputs)
-    
+
     TN = matrix[0][0]
     FP = matrix[0][1]
     FN = matrix[1][0]
     TP = matrix[1][1]
-    
-    metric['unweighted_accuracy'] = (TP + TN) / (TP + TN + FP + FN)
-    metric['TN'] = TN
-    metric['FP'] = FP
-    metric['FN'] = FN
-    metric['TP'] = TP
-    
+
+    metric["unweighted_accuracy"] = (TP + TN) / (TP + TN + FP + FN)
+    metric["TN"] = TN
+    metric["FP"] = FP
+    metric["FN"] = FN
+    metric["TP"] = TP
+
     MCC = ((TP * TN) - (FP * FN)) / float(np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)))
-    
-    metric['mcc'] = MCC
+
+    metric["mcc"] = MCC
 
     return metric
 
@@ -124,14 +117,17 @@ def main(args):
         bidirectional=args.bidirectional,
         epochs=args.epochs if args.epochs is not None else Config.epochs,
         learning_rate=args.learning_rate if args.learning_rate is not None else Config.learning_rate,
-        folds=args.folds if args.folds is not None else Config.folds
+        folds=args.folds if args.folds is not None else Config.folds,
     )
 
     print(config)
 
     df = pd.read_pickle(args.embeddings_file)
     kf = KFold(n_splits=config.folds, shuffle=True)
-    
+
+    best_accuracy = 0
+    best_model = None
+
     metrics = []
     for train_indices, val_indices in kf.split(df):
         model = SentimentRNN(config.input_size, config.hidden_size, config.layers, config.bidirectional).to(device)
@@ -143,12 +139,22 @@ def main(args):
         metric = evaluate(model, val_loader, config)
         metrics.append(metric)
 
+        if metric["unweighted_accuracy"] > best_accuracy:
+            best_accuracy = metric["unweighted_accuracy"]
+            best_model = model
+
         print(f'Unweighted accuracy: {metric["unweighted_accuracy"]:.3f}')
         print(f'TN: {metric["TN"]}')
         print(f'FP: {metric["FP"]}')
         print(f'FN: {metric["FN"]}')
         print(f'TP: {metric["TP"]}')
         print(f'mcc: {metric["mcc"]:.3f}')
+
+    if args.model_file is not None:
+        path = Path(args.model_file)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        best_model_scripted = torch.jit.script(best_model.to(device="cpu"))
+        best_model_scripted.save(path)
 
 
 if __name__ == "__main__":
@@ -162,6 +168,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, help="Number of training epochs")
     parser.add_argument("--learning_rate", type=float, help="Learning rate")
     parser.add_argument("--folds", type=int, help="Number of folds used for training")
+    parser.add_argument("--model_file", type=str, help="Output file path to save model")
 
     args = parser.parse_args()
 
