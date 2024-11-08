@@ -6,15 +6,15 @@ from pathlib import Path
 class RNN:
     # hyperparameters
     input_size: int = 300
-    hidden_size: int = 32
+    hidden_size: int = 64
     num_layers: int = 1
     bias: bool = True
     dropout: float = 0
     bidirectional: bool = False
 
     # training parameters
-    epochs: int = 10
-    folds: int = 8
+    epochs: int = 20
+    folds: int = 5
     learning_rate: float = 0.0005
     batch_size: int = 1
 
@@ -22,11 +22,11 @@ class RNN:
 @dataclass
 class FFNN:
     # hyperparameters
-    input_size: int = RNN.hidden_size * 400
+    input_size: int = RNN.hidden_size * 200
     
     # training parameters
-    epochs: int = 10
-    folds: int = 8
+    epochs: int = 20
+    folds: int = 5
     learning_rate: float = 0.0005
 
 
