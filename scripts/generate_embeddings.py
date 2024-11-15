@@ -2,15 +2,14 @@ import numpy as np
 import pandas as pd
 import argparse
 import fasttext
-from config.config import config
 
 
 ft = None
 
-def load_models():
+def load_models(fasttext_model_path):
     """Used to lazy-load models after parsing arguments"""
     global ft
-    ft = fasttext.load_model(config.paths.fasttext)
+    ft = fasttext.load_model(fasttext_model_path)
 
 def get_embeddings(tokens):
     """Convert tokens to a numpy array of embeddings"""
@@ -37,20 +36,27 @@ def main(args):
     if args.pad_length > 0:
         df["embedding"] = df["embedding"].apply(lambda x: pad_embedding(x, args.pad_length))
     
-    output_df = df[["sentiment", "embedding"]]
-    
+    if "augmented" not in df.columns:
+        df["augmented"] = False
+
+    output_df = df[["sentiment", "embedding", "augmented"]]
+
+        
     output_df.to_pickle(args.output)
     
 
 if __name__ == "__main__":
+    print(f"++++++++++++++{__file__}++++++++++++++")
+    
     parser = argparse.ArgumentParser(description="Process review data.")
+    parser.add_argument("fasttext_model", type=str, help="Binary Fasttext model.")
+    parser.add_argument("input_file", type=str, help="Input CSV file.")
     parser.add_argument("-r", "--rows", type=int, default=0, help="Number of rows to read from the CSV file.")
     parser.add_argument("-p", "--pad_length", type=int, default=0, help="Maximum length for padding embeddings.")
-    parser.add_argument("-o", "--output", type=str, default="embeddings.pkl", help="Output file")
-    parser.add_argument("input_file", type=str, help="Input CSV file")
+    parser.add_argument("-o", "--output", type=str, default="generated_embeddings.pkl", help="Output file")
     
     args = parser.parse_args()
 
-    load_models()
+    load_models(args.fasttext_model)
 
     main(args)

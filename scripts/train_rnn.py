@@ -10,7 +10,7 @@ from pathlib import Path
 
 from models.rnn import RNN
 from config.config import config
-from data.dataloader import create_sentiment_dataloader
+from data.dataloader import create_original_sentiment_dataloader, create_augmented_sentiment_dataloader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -34,7 +34,7 @@ def train(model: nn.Module, dataloader: DataLoader):
 
 def train_folds(args):
     df = pd.read_pickle(args.embeddings_file)
-    kf = KFold(n_splits=config.rnn.folds, shuffle=True)
+    kf = KFold(n_splits=config.rnn.folds, shuffle=False)
 
     best_accuracy = 0
     best_model = None
@@ -42,8 +42,15 @@ def train_folds(args):
     metrics = []
     for train_indices, val_indices in kf.split(df):
         model = RNN().to(device)
-        train_loader = create_sentiment_dataloader(df, train_indices)
-        val_loader = create_sentiment_dataloader(df, val_indices)
+        train_loader = None
+        if len(df["augmented"]) > 0:
+            train_loader = create_augmented_sentiment_dataloader(df, train_indices)
+        else:
+            train_loader = create_original_sentiment_dataloader(df, train_indices)
+            
+        val_df = df.iloc[val_indices]
+        val_df = val_df[val_df["augmented"] == False]
+        val_loader = create_original_sentiment_dataloader(df)
 
         train(model, train_loader)
 
@@ -100,7 +107,8 @@ def evaluate(model: nn.Module, dataloader: DataLoader):
 
 
 def main(args):
-    print("Train RNN")
+    print(f"++++++++++++++{__file__}++++++++++++++")
+
     train_folds(args)
 
 

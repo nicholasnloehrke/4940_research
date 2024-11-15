@@ -10,7 +10,7 @@ from pathlib import Path
 
 from models.ffnn import FFNN
 from config.config import config
-from data.dataloader import create_hidden_states_dataloader
+from data.dataloader import create_augmented_hidden_states_dataloader, create_original_hidden_states_dataloader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -42,8 +42,14 @@ def train_folds(args):
     metrics = []
     for train_indices, val_indices in kf.split(df):
         model = FFNN().to(device)
-        train_loader = create_hidden_states_dataloader(df, train_indices)
-        val_loader = create_hidden_states_dataloader(df, val_indices)
+        if len(df["augmented"]) > 0:
+            train_loader = create_augmented_hidden_states_dataloader(df, train_indices)
+        else:
+            train_loader = create_original_hidden_states_dataloader(df, train_indices)
+
+        val_df = df.iloc[val_indices]
+        val_df = val_df[val_df["augmented"] == False]
+        val_loader = create_original_hidden_states_dataloader(df)
 
         train(model, train_loader)
 
@@ -105,6 +111,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    print(f"++++++++++++++{__file__}++++++++++++++")
+    
     parser = argparse.ArgumentParser(description="Train FFNN")
     parser.add_argument("hidden_states_file", type=str, help="Input hidden states file in pickle format")
     parser.add_argument("-o", "--model_file", type=str, default="ffnn_model.model", help="Output model file")

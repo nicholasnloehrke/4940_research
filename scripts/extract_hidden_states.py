@@ -4,7 +4,7 @@ import pandas as pd
 import argparse
 
 from models.rnn import RNN
-from data.dataloader import create_sentiment_dataloader
+from data.dataloader import create_augmented_sentiment_dataloader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,7 +21,7 @@ def load_model(model_path):
 def main(args):
     rnn = load_model(args.model_file)
     df = pd.read_pickle(args.embeddings_file)
-    dataloader = create_sentiment_dataloader(df)
+    dataloader = create_augmented_sentiment_dataloader(df)
     all_hidden_states = []
     sentiments = []
 
@@ -47,12 +47,17 @@ def main(args):
             
     out_df = pd.DataFrame({
         "hidden_states": all_hidden_states,
-        "sentiment": sentiments
+        "sentiment": sentiments,
+        "augmented": df["augmented"]
     })
+
     out_df.to_pickle(args.output)
+
     print(f'Hidden state array dimensions: {len(all_hidden_states[0])}')
 
 if __name__ == "__main__":
+    print(f"++++++++++++++{__file__}++++++++++++++")
+    
     parser = argparse.ArgumentParser(description="Extract hidden states")
     parser.add_argument("model_file", type=str, help="Input model file")
     parser.add_argument("embeddings_file", type=str, help="Input embeddings file")

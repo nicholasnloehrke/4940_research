@@ -7,7 +7,7 @@ import argparse
 import pandas as pd
 
 from models.ffnn import FFNN
-from data.dataloader import create_hidden_states_dataloader
+from data.dataloader import create_original_hidden_states_dataloader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -54,7 +54,7 @@ def evaluate(model: nn.Module, dataloader: DataLoader):
 def main(args):
     ffnn = load_model(args.model_file)
     df = pd.read_pickle(args.embeddings_file)
-    dataloader = create_hidden_states_dataloader(df)
+    dataloader = create_original_hidden_states_dataloader(df)
     
     metric = evaluate(ffnn, dataloader)
     
@@ -67,6 +67,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    print(f"++++++++++++++{__file__}++++++++++++++")
+    
     parser = argparse.ArgumentParser(description="Evalaute FFNN")
     parser.add_argument("model_file", type=str, help="Input model file")
     parser.add_argument("embeddings_file", type=str, help="Input embeddings file in pickle format")
