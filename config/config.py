@@ -6,28 +6,30 @@ from pathlib import Path
 class RNN:
     # hyperparameters
     input_size: int = 300
-    hidden_size: int = 64
-    num_layers: int = 1
+    hidden_size: int = 50
+    num_layers: int = 5
     bias: bool = True
-    dropout: float = 0
+    dropout: float = 0.1
     bidirectional: bool = False
 
     # training parameters
-    epochs: int = 20
-    folds: int = 5
-    learning_rate: float = 0.0005
+    epochs: int = 30
+    folds: int = 2
+    learning_rate: float = 0.1
     batch_size: int = 1
 
 
 @dataclass
 class FFNN:
     # hyperparameters
-    input_size: int = RNN.hidden_size * 200
-    
+    hidden_state_embedding_size: int = 512
+    input_size: int = RNN.hidden_size * hidden_state_embedding_size
+
     # training parameters
     epochs: int = 20
-    folds: int = 5
-    learning_rate: float = 0.0005
+    folds: int = 2
+    learning_rate: float = 0.001
+    batch_size: int = 256
 
 
 @dataclass

@@ -4,36 +4,47 @@
 #                                    TRAINING                                       #
 #####################################################################################
 
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+OUTPUT_DIR="runs/$TIMESTAMP"
+# INPUT_REVIEWS="data/raw_reviews.csv"
+INPUT_REVIEWS="data/raw_reviews_small.csv"
+HIDDEN_STATE_EMBEDDING_SIZE=$(python -c "from config.config import config; print(config.ffnn.hidden_state_embedding_size)")
+
+mkdir -p "$OUTPUT_DIR"
+
+cp config/config.py $OUTPUT_DIR/config.py
+
 # Create training/test splits
-python -m scripts.create_train_test_datasets data/raw_reviews.csv --train_outfile data/raw_training_reviews.csv --test_outfile data/raw_test_reviews.csv --test_size 0.15
+python -m scripts.create_train_test_datasets $INPUT_REVIEWS --train_outfile $OUTPUT_DIR/raw_training_reviews.csv --test_outfile $OUTPUT_DIR/raw_test_reviews.csv --test_size 0.15
 
 # Preprocess
-python -m scripts.preprocess_reviews data/raw_training_reviews.csv -o data/preprocessed_training_reviews.csv --chunk 20 --max_chunks 5 --shuffle_chunk 20
+python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv --chunk 10 --max_chunks 50 --shuffle_chunk 30
+# python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv 
 
 # Generate training embeddings
-python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin data/preprocessed_training_reviews.csv -o data/training_embeddings.pkl
+python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin $OUTPUT_DIR/preprocessed_training_reviews.csv -o $OUTPUT_DIR/training_embeddings.pkl
 
 # Train RNN
-python -m scripts.train_rnn data/training_embeddings.pkl -o data/test_rnn.model
+python -m scripts.train_rnn $OUTPUT_DIR/training_embeddings.pkl -o $OUTPUT_DIR/rnn.model
 
 # Extract hidden states
-python -m scripts.extract_hidden_states data/test_rnn.model data/training_embeddings.pkl -d 200 -o data/training_hidden_states.pkl
+python -m scripts.extract_hidden_states $OUTPUT_DIR/rnn.model $OUTPUT_DIR/training_embeddings.pkl -d $HIDDEN_STATE_EMBEDDING_SIZE -o $OUTPUT_DIR/training_hidden_states.pkl
 
 # Train FFNN
-python -m scripts.train_ffnn data/training_hidden_states.pkl -o data/test_ffnn.model
+python -m scripts.train_ffnn $OUTPUT_DIR/training_hidden_states.pkl -o $OUTPUT_DIR/ffnn.model
 
 #####################################################################################
 #                                   EVALUATION                                      #
 #####################################################################################
 
 # Generate test embeddings
-python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin data/raw_test_reviews.csv -o data/test_embeddings.pkl
+python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin $OUTPUT_DIR/raw_test_reviews.csv -o $OUTPUT_DIR/test_embeddings.pkl
 
 # Evaluate RNN
-python -m scripts.evaluate_rnn data/test_rnn.model data/test_embeddings.pkl
+python -m scripts.evaluate_rnn $OUTPUT_DIR/rnn.model $OUTPUT_DIR/test_embeddings.pkl
 
 # Extract hidden states
-python -m scripts.extract_hidden_states data/test_rnn.model data/test_embeddings.pkl -d 200 -o data/raw_test_hidden_states.pkl
+python -m scripts.extract_hidden_states $OUTPUT_DIR/rnn.model $OUTPUT_DIR/test_embeddings.pkl -d $HIDDEN_STATE_EMBEDDING_SIZE -o $OUTPUT_DIR/test_hidden_states.pkl
 
 # Evaluate FFNN
-python -m scripts.evaluate_ffnn data/test_ffnn.model data/raw_test_hidden_states.pkl
+python -m scripts.evaluate_ffnn $OUTPUT_DIR/ffnn.model $OUTPUT_DIR/test_hidden_states.pkl

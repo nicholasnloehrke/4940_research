@@ -73,7 +73,7 @@ def create_original_hidden_states_dataloader(df: pd.DataFrame, indices=None) -> 
     labels = torch.tensor(fold_df["sentiment"].values)
 
     dataset = HiddenStatesDataset(features, labels)
-    return DataLoader(dataset, batch_size=config.rnn.batch_size, shuffle=True, pin_memory=True)
+    return DataLoader(dataset, batch_size=config.ffnn.batch_size, shuffle=True, pin_memory=True)
 
 def create_augmented_hidden_states_dataloader(df: pd.DataFrame, indices=None) -> DataLoader:
     if indices is None:
@@ -88,4 +88,4 @@ def create_augmented_hidden_states_dataloader(df: pd.DataFrame, indices=None) ->
     labels = torch.tensor(fold_df["sentiment"].values)
 
     dataset = HiddenStatesDataset(features, labels)
-    return DataLoader(dataset, batch_size=config.rnn.batch_size, shuffle=True, pin_memory=True)
+    return DataLoader(dataset, batch_size=config.ffnn.batch_size, shuffle=True, pin_memory=True)

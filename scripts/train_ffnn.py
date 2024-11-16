@@ -13,6 +13,7 @@ from config.config import config
 from data.dataloader import create_augmented_hidden_states_dataloader, create_original_hidden_states_dataloader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 
 
 def train(model: nn.Module, dataloader: DataLoader):
@@ -106,7 +107,6 @@ def evaluate(model: nn.Module, dataloader: DataLoader):
 
 
 def main(args):
-    print("Train FFNN")
     train_folds(args)
 
 

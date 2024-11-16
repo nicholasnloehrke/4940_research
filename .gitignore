@@ -7,6 +7,7 @@ data/*.pkl
 data/*.model
 
 rnn/pretrained_models/
+runs/
 
 
 rnn/data/review_data_embeddings.pkl

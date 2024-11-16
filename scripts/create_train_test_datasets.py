@@ -6,7 +6,6 @@ import argparse
 def augment_reviews(args):
     df = pd.read_csv(args.input_file)
     df = df.dropna()
-    df = df.head(300)
     
     train_df, test_df = train_test_split(df, test_size=args.test_size, stratify=df["rating"])
     
