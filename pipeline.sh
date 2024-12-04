@@ -19,7 +19,6 @@ python -m scripts.create_train_test_datasets $INPUT_REVIEWS --train_outfile $OUT
 
 # Preprocess
 python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv --chunk 10 --max_chunks 100 --shuffle_chunk 30
-# python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv 
 
 # Generate training embeddings
 python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin $OUTPUT_DIR/preprocessed_training_reviews.csv -o $OUTPUT_DIR/training_embeddings.pkl
