@@ -18,8 +18,8 @@ cp config/config.py $OUTPUT_DIR/config.py
 python -m scripts.create_train_test_datasets $INPUT_REVIEWS --train_outfile $OUTPUT_DIR/raw_training_reviews.csv --test_outfile $OUTPUT_DIR/raw_test_reviews.csv --test_size 0.15
 
 # Preprocess
-python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv --chunk 10 --max_chunks 100 --shuffle_chunk 30
-# python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv 
+# python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv --chunk 10 --max_chunks 100 --shuffle_chunk 30
+python -m scripts.preprocess_reviews $OUTPUT_DIR/raw_training_reviews.csv -o $OUTPUT_DIR/preprocessed_training_reviews.csv 
 
 # Generate training embeddings
 python -m scripts.generate_embeddings fasttext/crawl-300d-2M-subword.bin $OUTPUT_DIR/preprocessed_training_reviews.csv -o $OUTPUT_DIR/training_embeddings.pkl

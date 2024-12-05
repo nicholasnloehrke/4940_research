@@ -30,7 +30,7 @@ def pad_embedding(embeddings, pad_length):
 def main(args):
     df = pd.read_csv(args.input_file, nrows=args.rows) if args.rows > 0 else pd.read_csv(args.input_file)
     df = df.dropna()
-    df["sentiment"] = np.where(df["rating"] < 3, 0, 1)
+    df["sentiment"] = np.where(df["rating"] <= 3, 0, 1)
     df["embedding"] = df["review"].apply(get_embeddings)    
 
     if args.pad_length > 0:
