@@ -14,6 +14,7 @@ rnn/data/review_data_embeddings.pkl
 rnn/models/
 rnn/data/*.pkl
 fasttext/
+~$*.pptx
 
 
 #############################################
