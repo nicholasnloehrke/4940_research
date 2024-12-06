@@ -28,7 +28,7 @@ Sentiment analysis on Amazon review data
 - RNN
     - Hyperparameter's
     - Topology
-        - LSTM (maybe mention )
+        - LSTM (maybe mention GRU)
         - Fully connect layers based on last hidden state
         - Output layer (2 classes)
     - Training ***(PICTURE)***
